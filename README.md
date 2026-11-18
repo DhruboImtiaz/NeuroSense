@@ -1,68 +1,62 @@
 # NeuroSense
 
-A Flutter-based, AI-powered neurological screening assistant designed to help patients conduct preliminary clinical screenings for neurological anomalies right from their mobile device.
+NeuroSense is a native Android app for measuring phone movement and voice pitch with guided check-ins. Version 1.6.0 uses Kotlin and Jetpack Compose. It runs the measurements on the phone.
 
-### Core Functionality
-- Vocal Biomarker Analysis - Analyzes micro-fluctuations and pitch instability in the user's voice for early signs of neurological irregularities
-- Kinetic Tremor Analysis - Uses the device's accelerometer to monitor high-precision variance, detecting resting and postural motor tremors
-- Explainable AI (XAI) Dashboard - Provides detailed breakdowns of AI inference results, contributing factors, signal quality indicators (SNR, Jitter), and overall confidence levels
-- Stunning UI/UX - Built with modern, responsive design using glassmorphism, animated gradient backgrounds, and glowing UI components
+- **Motion check** records 10 seconds of accelerometer data. Results show typical movement, peak movement, an acceleration trace, and the frequency and strength of a steady rhythm when the recording supports an estimate.
+- **Voice check** records a five-second sustained “ah” after a short background sample. Results show median pitch, pitch variation, and a pitch trace. The app asks for a retry if the recording is too quiet, noisy, or clipped, or if it contains too little sustained voiced audio.
+- **History** saves motion sessions on the device. Compare two checks with the same setup and sensor method on a shared scale.
+- **Exports** include motion CSV, voice pitch CSV, and an opt-in ZIP containing the pitch CSV and matching WAV.
 
-### Technical Excellence
-- Flutter Framework - Cross-platform UI toolkit for visually attractive native applications
-- Dart Programming Language - Robust, typed language optimized for UI building
-- Provider State Management - Efficient and scalable state management pattern
-- GetIt Dependency Injection - Service locator pattern for clean architecture
-- Fl_Chart - High-quality, interactive data visualization library
-- Sensors Plus - Hardware integration for accessing device accelerometer data
+These are experimental measurements of motion and pitch. NeuroSense does not assess disease risk. Synthetic-signal tests cover the measurement pipeline. Accuracy across devices and real recordings still needs validation.
 
-### Prerequisites
-Before you begin, ensure you have the following installed:
-- Flutter SDK (>=3.0.0) - Mobile development
-- Dart SDK - Core language
-- Android Studio or Xcode - For iOS/Android emulators and building
+## Build and run
 
-### Setup
-```bash
-# Clone the repository
-git clone <repository-url>
-cd NeuroSense
+Requires Android SDK Platform 36 and JDK 17 or newer. The app runs on Android 7.0 (API 24) or later. The motion check needs a phone accelerometer, and the voice check needs a microphone.
+
+Open the `android` directory in Android Studio, select a connected Android device, and run the `app` configuration. For command-line builds, set `ANDROID_HOME` to your Android SDK directory, then run these commands from the repository root.
+
+```sh
+cd android
+./gradlew assembleDebug testDebugUnitTest lintDebug
 ```
 
-#### 1. Application Configuration
-Fetch all required dependencies:
-```bash
-flutter pub get
+The debug APK is at `android/app/build/outputs/apk/debug/app-debug.apk`, relative to the repository root. On Windows, use `gradlew.bat`.
+
+## Use the app
+
+### Motion check
+
+1. Open **Check-in**, tap **Start motion check**, and choose a setup. Hold the phone as instructed through the countdown and recording.
+2. Review the result and tap **Save session** to keep it on the device.
+3. Open **History** to edit a session’s setup, delete it, or select **Compare movement traces**. Sessions labeled **Test recording** stay out of comparisons.
+
+Typical movement is the time-weighted root mean square of the three-axis acceleration magnitude. The app uses linear acceleration when available and estimates and removes gravity from accelerometer readings otherwise. The rhythm analysis resamples signed axis readings onto a 50 Hz grid and looks for a consistent spectral peak between 3 and 12 Hz. Deliberate movement can produce a steady rhythm too.
+
+### Voice check
+
+1. From **Check-in**, tap **Open voice check** and allow microphone access.
+2. Stay quiet for the background sample. At the prompt, say “ah” at a comfortable pitch and volume for five seconds.
+3. Review median pitch, the middle 80% of the pitch estimates, and the pitch trace. Gaps mark intervals without a usable pitch estimate.
+
+Voice results are available until you close the check. Audio is processed on the phone and discarded after analysis by default. If you enable audio export before recording, the audio is kept in memory until you leave or start over so you can save a copy.
+
+## Export and validate measurements
+
+### Motion
+
+Choose **Export motion CSV** on a result or saved session. The CSV contains elapsed time, signed acceleration on each axis, and movement and rhythm results. Sessions recorded before 1.3 can export their saved display trace. Use rows marked `axis_sample` for frequency comparisons.
+
+For validation, record the phone and a reference accelerometer on the same controlled motion fixture. Include stillness, an isolated bump, and steady motion at known frequencies. Note the phone model and sensor method. Compare the estimate in Hz with the reference and record both the error and how often the app cannot produce an estimate.
+
+### Voice
+
+Choose **Export pitch CSV** for the estimates alone. To keep the audio too, turn on **Enable audio export for this check** before recording and select **Export audio and pitch (ZIP)** on the result screen. The WAV and CSV share the same five-second timeline. The export excludes the quiet baseline.
+
+The included [comparison tool](tools/compare_voice.py) runs [Praat’s pitch estimator](https://www.fon.hum.uva.nl/praat/manual/Pitch.html) on the exported WAV and compares it with NeuroSense frame by frame. The files stay on your computer. Run this from the repository root with Python and [Parselmouth](https://parselmouth.readthedocs.io/en/stable/api_reference.html).
+
+```sh
+python3 -m pip install praat-parselmouth
+python3 tools/compare_voice.py /path/to/neurosense-voice-recording.zip
 ```
 
-#### 2. Run the Application
-Run the application on an emulator or physical device:
-```bash
-flutter run
-```
-
-### Project Architecture
-```text
-NeuroSense/
-├── lib/
-│   ├── core/               # Core configurations and interfaces
-│   │   ├── di/                 # Dependency injection (GetIt setup)
-│   │   └── interfaces/         # Service interfaces (IAiInferenceService)
-│   ├── models/             # Data models (AnalysisResult)
-│   ├── screens/            # UI Screens (Home, Tremor Analysis, Voice Analysis)
-│   ├── services/           # Business logic and external service mocks
-│   ├── utils/              # Theming, animations, and transitions
-│   ├── widgets/            # Reusable UI components (GlassCard, GlowingButton)
-│   └── main.dart           # Application entry point
-├── android/              # Native Android configuration
-├── ios/                  # Native iOS configuration
-└── pubspec.yaml          # Project metadata and dependencies
-```
-
-### Architectural Highlights
-- Interface-Driven Services - The AI inference logic sits behind an interface (`IAiInferenceService`), making it easy to swap implementations
-- Service Locator - `get_it` is used to register and retrieve services globally
-- Component Reusability - Complex UI elements like glassmorphism cards (`GlassCard`) are extracted into the `widgets/` folder for consistency
-
-### Disclaimer
-**NeuroSense** is a conceptual application. Its simulated AI inference engine provides mocked diagnostic results intended for demonstration and UI/UX testing purposes only. It is not a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with any questions regarding a medical condition.
+The tool reports pitch error on frames both estimators can measure, estimated pitch ranges, and frames where the estimators disagree about whether pitch can be measured. Use known tones to check the comparison pipeline and repeated recordings of sustained vowels on physical phones to evaluate repeatability.
