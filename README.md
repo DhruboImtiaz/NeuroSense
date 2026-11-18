@@ -9,6 +9,13 @@ NeuroSense is a native Android app for measuring phone movement and voice pitch 
 
 These are experimental measurements of motion and pitch. NeuroSense does not assess disease risk. Synthetic-signal tests cover the measurement pipeline. Accuracy across devices and real recordings still needs validation.
 
+## Roadmap
+
+1. **Validate motion and voice on real phones.** Compare motion frequency with a known-frequency reference and compare pitch from the same recording with Praat. Repeat both checks across sessions and Android devices to measure error, repeatability, and how often the app cannot return a usable result.
+2. **Make recordings easier to repeat.** Improve the voice start cue and make it easier to see when pitch tracking starts or drops out. Refine the supported-hand motion instructions and tell users when a recording needs a retake. Use the validation results to decide which changes improve the measurements.
+3. **Track changes over time.** Add opt-in history for pitch summaries and show how pitch and movement vary across checks recorded under similar conditions. Keep audio export optional.
+4. **Explore one clinical screening use.** Once the measurements are reliable, work with clinicians to define a specific screening question for hand tremor and test it on an independent group. Any screening claim would depend on that study, including its missed cases, false alerts, and inconclusive results.
+
 ## Build and run
 
 Requires Android SDK Platform 36 and JDK 17 or newer. The app runs on Android 7.0 (API 24) or later. The motion check needs a phone accelerometer, and the voice check needs a microphone.
